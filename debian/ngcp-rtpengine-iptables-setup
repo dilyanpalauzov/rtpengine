@@ -12,7 +12,9 @@ if [ -f "$DEFAULTS" ]; then
 fi
 
 MODPROBE_OPTIONS=""
-TABLE=$(/usr/libexec/rtpengine/rtpengine-get-table --config-file="${CONFIG_FILE-/etc/rtpengine/rtpengine.conf}")
+
+TABLE=$(/git/voip/rtpengine/utils/rtpengine-get-table --config-file="${CONFIG_FILE-/etc/rtpengine/rtpengine.conf}")
+TABLE=30
 
 # Handle requested setuid/setgid.
 if ! test -z "$SET_USER"; then
@@ -54,18 +56,19 @@ firewall_setup()
   # shellcheck disable=SC2086
   modprobe $MODNAME $MODPROBE_OPTIONS
 
-  iptables -N rtpengine 2>/dev/null
-  iptables -D INPUT -j rtpengine 2>/dev/null
-  iptables -D INPUT -p udp -j rtpengine 2>/dev/null
-  iptables -I INPUT -p udp -j rtpengine
-  iptables -D rtpengine -p udp -j RTPENGINE --id "$TABLE" 2>/dev/null
-  iptables -I rtpengine -p udp -j RTPENGINE --id "$TABLE"
-  ip6tables -N rtpengine 2>/dev/null
-  ip6tables -D INPUT -j rtpengine 2>/dev/null
-  ip6tables -D INPUT -p udp -j rtpengine 2>/dev/null
-  ip6tables -I INPUT -p udp -j rtpengine
-  ip6tables -D rtpengine -p udp -j RTPENGINE --id "$TABLE" 2>/dev/null
-  ip6tables -I rtpengine -p udp -j RTPENGINE --id "$TABLE"
+#  iptables-nft -N rtpengine 2>/dev/null
+#  iptables-nft -D INPUT -j rtpengine 2>/dev/null
+#  iptables-nft -D INPUT -p udp -j rtpengine 2>/dev/null
+#  iptables-nft -I INPUT -p udp -j rtpengine --dport 30000:40000
+#/usr/sbin/iptables-nft -I INPUT -p udp -j RTPENGINE --id 30 --dport 30000:40000
+  iptables-nft -I INPUT -p udp -j RTPENGINE --id "$TABLE" --dport 30000:40000 2>/dev/null
+#  iptables-nft -I rtpengine -p udp -j RTPENGINE --id "$TABLE"
+#  ip6tables -N rtpengine 2>/dev/null
+#  ip6tables -D INPUT -j rtpengine 2>/dev/null
+#  ip6tables -D INPUT -p udp -j rtpengine 2>/dev/null
+#  ip6tables -I INPUT -p udp -j rtpengine
+#  ip6tables -D rtpengine -p udp -j RTPENGINE --id "$TABLE" 2>/dev/null
+#  ip6tables -I rtpengine -p udp -j RTPENGINE --id "$TABLE"
 }
 
 firewall_teardown()
@@ -102,9 +105,8 @@ firewall_teardown()
   if [ "$MANAGE_IPTABLES" != "yes" ]; then
     return
   fi
-
-  iptables -D rtpengine -p udp -j RTPENGINE --id "$TABLE" 2>/dev/null
-  ip6tables -D rtpengine -p udp -j RTPENGINE --id "$TABLE" 2>/dev/null
+  iptables-nft -D INPUT -p udp -j RTPENGINE --id 30 --dport 30000:40000 2> /dev/null
+  #ip6tables -D rtpengine -p udp -j RTPENGINE --id "$TABLE" 2>/dev/null
 
   # The module refcount might also be delayed going to zero.
   for _ in $(seq 1 10); do
