@@ -2,7 +2,7 @@
 #include <glib.h>
 #ifdef WITH_TRANSCODING
 #include <mysql.h>
-#include <mysql/errmsg.h>
+#include <errmsg.h>
 #endif
 #include "obj.h"
 #include "log.h"
